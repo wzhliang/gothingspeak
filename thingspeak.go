@@ -50,7 +50,7 @@ func (w *ChannelWriter) buildUrl() {
 }
 
 func (w *ChannelWriter) AddField(n int, value string) bool {
-	if n <= 0 || n > MAX_LEN_FIELDS {
+	if n <= 0 || n >= MAX_LEN_FIELDS {
 		return false // FIXME: return error
 	}
 

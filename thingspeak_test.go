@@ -18,3 +18,14 @@ func Test1(t *testing.T) {
 		log.Println(resp)
 	}
 }
+
+func Test2(t *testing.T) {
+	ts := NewChannelWriter("BZR8XQJMO65NSRTX", true)
+	if ts.AddField(0, "1000") {
+		t.Error("Succeeded adding filed 0")
+	}
+
+	if ts.AddField(8, "1000") {
+		t.Error("Succeeded adding filed 8")
+	}
+}
