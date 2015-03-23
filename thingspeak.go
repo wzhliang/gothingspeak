@@ -1,32 +1,77 @@
 package gothingspeak
 
+// http://community.thingspeak.com/documentation/api/
+
 import (
 	"fmt"
 	"log"
 	"net/http"
 )
 
-const baseUrl string = "https://api.thingspeak.com"
-const updatePath string = "update"
+const (
+	apiBase        string = "api.thingspeak.com"
+	MAX_LEN_FIELDS int    = 8
+)
 
-func buildUpdateUrl(key string, field string, value string) string {
-	s := fmt.Sprintf("%s/%s?api_key=%s&%s=%s", baseUrl, updatePath, key, field, value)
-	log.Println(s)
-
-	return s
+type ChannelWriter struct {
+	tls       bool
+	key       string
+	fields    map[int]string
+	lat       string
+	long      string
+	elevation string
+	path      string
+	url       string
 }
 
-func Update(key string, field string, value string) (resp *http.Response, err error) {
+func NewChannelWriter(key string, useTls bool) *ChannelWriter {
+	w := new(ChannelWriter)
+	w.tls = useTls
+	w.key = key
+	w.fields = make(map[int]string)
+
+	return w
+}
+
+func (w *ChannelWriter) buildUrl() {
+	var schema string
+
+	if w.tls {
+		schema = "https"
+	} else {
+		schema = "http"
+	}
+	w.path = "update"
+
+	w.url = fmt.Sprintf("%s://%s/%s?api_key=%s", schema, apiBase, w.path, w.key)
+	for n, f := range w.fields {
+		w.url += fmt.Sprintf("&field%d=%s", n, f)
+	}
+}
+
+func (w *ChannelWriter) AddField(n int, value string) bool {
+	if n <= 0 || n > MAX_LEN_FIELDS {
+		return false // FIXME: return error
+	}
+
+	w.fields[n] = value
+
+	return true
+}
+
+func (w *ChannelWriter) Update() (resp *http.Response, err error) {
+	w.buildUrl()
+	log.Printf("URL: %s\n", w.url)
+
 	client := &http.Client{}
-	r, err := http.NewRequest("POST", buildUpdateUrl(key, field, value), nil)
+	r, err := http.NewRequest("POST", w.url, nil)
 	if err != nil {
 		return nil, err
 	}
+
 	resp, err = client.Do(r)
 
 	return
 }
 
-/* From thingspeak doc, updating a channel:
-https://api.thingspeak.com/update?api_key=YOUR_CHANNEL_API_KEY&field1=7
-*/
+// EoF
